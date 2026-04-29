@@ -1,0 +1,15 @@
+[Unit]
+Description=Herb MCP Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/herb_mcp
+EnvironmentFile=/opt/herb_mcp/.env
+ExecStart=/opt/herb_mcp/.venv/bin/python /opt/herb_mcp/mcp_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

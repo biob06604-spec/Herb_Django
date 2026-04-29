@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Herb MCP Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --panel: #ffffff;
+            --panel-soft: #f8fafc;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --primary: #6d5efc;
+            --primary-dark: #5646f2;
+            --primary-soft: #eef2ff;
+            --user-bg: #e0f2fe;
+            --assistant-bg: #f3f4f6;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(109, 94, 252, 0.10), transparent 28%),
+                radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 22%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1120px;
+            margin: 32px auto;
+            padding: 0 16px 32px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #6d5efc, #8b7cff);
+            color: white;
+            border-radius: 24px;
+            padding: 28px 28px 22px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(6px);
+            margin-bottom: 14px;
+        }
+
+        .hero-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7CFC8A;
+            box-shadow: 0 0 0 4px rgba(124, 252, 138, 0.18);
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 38px;
+            line-height: 1.15;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.92);
+            max-width: 720px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .sidebar,
+        .chat-panel {
+            background: var(--panel);
+            border: 1px solid rgba(229, 231, 235, 0.9);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            padding: 18px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .sidebar-desc {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .prompt-card {
+            background: linear-gradient(180deg, #ffffff, #fafbff);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .prompt-card:hover {
+            transform: translateY(-2px);
+            border-color: #c7d2fe;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.10);
+        }
+
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: var(--primary-soft);
+            margin-bottom: 10px;
+        }
+
+        .prompt-card h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+        }
+
+        .prompt-card p {
+            margin: 0 0 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .prompt-example {
+            display: inline-block;
+            font-size: 13px;
+            color: var(--primary-dark);
+            background: #eef2ff;
+            padding: 7px 10px;
+            border-radius: 999px;
+        }
+
+        .chat-panel {
+            padding: 18px;
+            min-height: 760px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-topbar-left h2 {
+            margin: 0 0 4px;
+            font-size: 22px;
+        }
+
+        .chat-topbar-left p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 14px;
+            background: var(--panel-soft);
+            padding: 8px 12px;
+            border-radius: 999px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        #chat-box {
+            flex: 1;
+            min-height: 460px;
+            background: linear-gradient(180deg, #fafafa, #f9fbff);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .empty-state {
+            height: 100%;
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--muted);
+            padding: 20px;
+        }
+
+        .empty-state-inner {
+            max-width: 440px;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 10px;
+            color: var(--text);
+            font-size: 28px;
+        }
+
+        .empty-state p {
+            margin: 0;
+            line-height: 1.8;
+        }
+
+        .msg-row {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .msg-row.user-row {
+            justify-content: flex-end;
+        }
+
+        .msg-row.assistant-row {
+            justify-content: flex-start;
+        }
+
+        .msg {
+            max-width: 82%;
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+        }
+
+        .user {
+            background: linear-gradient(180deg, #dff1ff, #d5ecff);
+            border-bottom-right-radius: 6px;
+        }
+
+        .assistant {
+            background: linear-gradient(180deg, #f7f7f8, #f0f2f5);
+            border-bottom-left-radius: 6px;
+        }
+
+        .msg-role {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .msg pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 0;
+            font-family: inherit;
+            line-height: 1.75;
+            font-size: 15px;
+        }
+
+        .tool-badge {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--primary-dark);
+            background: var(--primary-soft);
+            border: 1px solid #dbe2ff;
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+
+        .composer {
+            margin-top: 16px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .composer input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 12px 10px;
+            background: transparent;
+            color: var(--text);
+        }
+
+        .composer input::placeholder {
+            color: #9ca3af;
+        }
+
+        .send-btn {
+            border: none;
+            cursor: pointer;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #6d5efc, #5b4df0);
+            color: white;
+            padding: 12px 18px;
+            font-size: 15px;
+            font-weight: 600;
+            min-width: 92px;
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 18px rgba(91, 77, 240, 0.25);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 思考状态的消息样式 */
+        .msg.thinking pre {
+            color: #9ca3af; /* 灰色文字 */
+            font-style: italic;
+        }
+
+        /* 闪烁的点点动画 */
+        .thinking-dots::after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+
+        /* 工具标签样式优化 */
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            color: #4b5563;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+        
+        .footer-tip {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .msg {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <div class="hero-badge">
+                <span class="hero-dot"></span>
+                <span>Chat HerbMCP · 基因-中药-药物智能检索助手</span>
+            </div>
+            <h1>Herb MCP Chat</h1>
+            <p>
+                通过自然语言查询基因相关中药、药物与成分信息。
+                你可以直接输入基因名、中药名，或者点击左侧推荐卡片快速开始。
+            </p>
+        </section>
+
+        <div class="layout">
+            <aside class="sidebar">
+                <h2>快捷问题</h2>
+                <div class="sidebar-desc">
+                    选择一个推荐问题，系统会自动填入输入框。你也可以自行修改后发送。
+                </div>
+
+                <div class="card-grid">
+                    <div class="prompt-card" data-prompt="查询 AHR 相关中药">
+                        <div class="card-icon">🧬</div>
+                        <h3>查询基因相关中药</h3>
+                        <p>根据基因名称查询相关中药信息。</p>
+                        <span class="prompt-example">例如：查询 AHR 相关中药</span>
+                    </div>
+
+                    <div style="margin-top: 18px;">
+                        <h2 style="font-size: 18px; margin: 0 0 10px;">最近问题</h2>
+                        <div id="recent-list" style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="prompt-card recent-item" data-prompt="AHR" style="padding: 12px;">
+                                <p style="margin: 0; color: #374151;">AHR</p>
+                            </div>
+                            <div class="prompt-card recent-item" data-prompt="查询 ACE2 相关中药" style="padding: 12px;">
+                                <p style="margin: 0; color: #374151;">查询 ACE2 相关中药</p>
+                            </div>
+                            <div class="prompt-card recent-item" data-prompt="查询大麻成分" style="padding: 12px;">
+                                <p style="margin: 0; color: #374151;">查询大麻成分</p>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="prompt-card" data-prompt="查询 ESR1 相关药物">
+                        <div class="card-icon">💊</div>
+                        <h3>查询基因相关药物</h3>
+                        <p>根据基因名称查询相关药物信息。</p>
+                        <span class="prompt-example">例如：查询 ESR1 相关药物</span>
+                    </div>
+
+                    <div class="prompt-card" data-prompt="查询大麻成分">
+                        <div class="card-icon">🌿</div>
+                        <h3>查询中药成分</h3>
+                        <p>根据中药名称查询其关联成分。</p>
+                        <span class="prompt-example">例如：查询大麻成分</span>
+                    </div>
+
+                    <div class="prompt-card" data-prompt="AHR">
+                        <div class="card-icon">📚</div>
+                        <h3>综合查询基因知识</h3>
+                        <p>综合查询某个基因相关的中药、药物和成分。</p>
+                        <span class="prompt-example">例如：AHR</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="chat-panel">
+                <div class="chat-topbar">
+                    <div class="chat-topbar-left">
+                        <h2>智能问答</h2>
+                        <p>输入问题后，系统会自动选择合适的查询工具并生成中文回答。</p>
+                    </div>
+                
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button id="clear-btn" style="
+                            border: 1px solid #e5e7eb;
+                            background: white;
+                            color: #374151;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            cursor: pointer;
+                        ">清空对话</button>
+                
+                        <div class="status">
+                            <span class="status-dot"></span>
+                            <span>服务已连接</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chat-box">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-state-inner">
+                            <h3>What can I help you with?</h3>
+                            <p>
+                                你可以直接输入基因名如 <strong>AHR</strong>，
+                                或使用推荐问题，例如“查询 ESR1 相关药物”“查询大麻成分”。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="composer">
+                    <input id="message-input" type="text" placeholder="请输入问题，例如：AHR、查询 ACE2 相关中药、查询大麻成分、查询 ESR1 相关药物">
+                    <button class="send-btn" id="send-btn">发送</button>
+                </div>
+
+                <div class="footer-tip">提示：优先使用数据库中真实存在的基因名，如 AHR、ACE2、ESR1。</div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/static/chat/chat.js"></script>
+</body>
+</html>

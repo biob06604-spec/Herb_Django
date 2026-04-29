@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>中药基因关联数据库</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>科研数据检索结果</h2>
+    <table id="herbTable">
+        <thead>
+            <tr>
+                <th>中药ID</th>
+                <th>名称</th>
+                <th>基因</th>
+                <th>关系</th>
+                <th>FDR BH</th>
+                <th>PMID</th> <th>文献标题</th> <th>Grade</th> <th>FDR BH</th> </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // 直接请求 API
+        fetch('http://127.0.0.1:8000/api/herbs/') 
+            .then(response => response.json())
+            .then(data => {
+                const items = data.results;
+                const tbody = document.querySelector('#herbTable tbody');
+data.forEach(item => {
+    const fields = item.fields;
+    const row = `<tr>
+        <td>${fields.herb_id}</td>
+        <td>${fields.full_name}</td>
+        <td>${fields.gene}</td>
+        <td>${fields.relationship || '-'}</td>
+        <td>${fields.p_value || '-'}</td>
+        <td>${fields.pubmed_id || '-'}</td> <td>${fields.reference_title || '-'}</td>
+        <td>${fields.grade || '-'}</td>
+        <td>${fields.fdr_bh || '-'}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+});
+            });
+    </script>
+</body>
+</html>
